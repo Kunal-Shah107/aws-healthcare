@@ -119,11 +119,12 @@ def s3_write_file(content, location, aws_region, content_type='str', s3_credenti
 
     # Save to S3 if the location matches the S3 pattern
     if 's3://' in location:
+      bucket, key = location.replace('s3://', '').split('/', maxsplit=1)
       if s3_credentials != None:
         s3 = boto3.client('s3', region_name=aws_region, **s3_credentials)
       else:
         s3 = boto3.client('s3', region_name=aws_region)
-      s3_response = s3.put_object(Body=content_bytes, Bucket=match.group(1), Key=match.group(2))
+      s3_response = s3.put_object(Body=content_bytes, Bucket=bucket, Key=key)
       instance_id = location.rsplit('/', maxsplit=1)[-1]
     return instance_id
   except Exception as e:
