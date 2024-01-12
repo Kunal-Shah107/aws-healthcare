@@ -340,7 +340,7 @@ def deidentify_dicom_orthanc(instance_id, src_dicom, config, logs, study_instanc
     labels, skipped = deidentifier.load_dicom(src_dicom)
     logs.update({
       'OriginalDICOMFile': {
-        'StudyInstanceUID': rpacs_dicom_util.study_instance_uid(deidentifier.dicom),
+        'StudyInstanceUID': rpacs_dicom_util.get_sop_instance_uid(deidentifier.dicom),
         'TransferSyntaxUID': rpacs_dicom_util.get_transfer_syntax_uid(deidentifier.dicom)
       },
       'MatchingLabels': labels,
@@ -394,8 +394,8 @@ def deidentify_dicom_orthanc(instance_id, src_dicom, config, logs, study_instanc
       
       # Temporarily change the SOP Instance ID before uploading the de-identified DICOM file to 
       # Orthanc in order to prevent the original DICOM file
-      study_instance_uid = rpacs_dicom_util.study_instance_uid(deidentifier.dicom)
-      rpacs_dicom_util.study_instance_uid(deidentifier.dicom)
+      sop_instance_uid = rpacs_dicom_util.get_sop_instance_uid(deidentifier.dicom)
+      rpacs_dicom_util.set_sop_instance_uid(deidentifier.dicom)
       dst_dicom = rpacs_dicom_util.export_dicom(deidentifier.dicom)
       
       # Upload the de-identified DICOM file to Orthanc. This new DICOM file should be ignored by the 
@@ -409,7 +409,7 @@ def deidentify_dicom_orthanc(instance_id, src_dicom, config, logs, study_instanc
       # Instance ID to its original value
       dst_dicom = client.src_orthanc.download_instance_dicom(tmp_instance_id, transcode=dst_transfer_syntax)
       deidentifier.load_dicom(dst_dicom, initial_load=False)
-      rpacs_dicom_util.study_instance_uid(deidentifier.dicom, study_instance_uid)
+      rpacs_dicom_util.get_sop_instance_uid(deidentifier.dicom)
       dst_dicom = rpacs_dicom_util.export_dicom(deidentifier.dicom)
       
     except Exception as e:
