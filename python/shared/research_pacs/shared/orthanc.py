@@ -82,6 +82,13 @@ class OrthancClient:
     return changes, new_last_seq
 
 
+  def get_study(self, study_instance_uid: str):
+    logger.debug(f'Getting study info with study_instance_uid = {study_instance_uid}')
+    response = self._request('GET', f'studies/{study_instance_uid}')
+    response_json = response.json()
+    return response_json
+
+
   def upload_instance(self, dicom_file):
     """
     Upload a DICOM file to Orthanc.
