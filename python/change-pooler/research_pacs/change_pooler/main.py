@@ -68,11 +68,15 @@ def main():
           logger.debug(f'New Orthanc change: {json.dumps(change)}')
           
           if change['ChangeType'] == 'NewInstance':
+            print('CHANGE : \n', change)
             logger.info(f"New DICOM instance in Orthanc - ID={change['ID']}")
             
             # Send a SQS message to notify of the new DICOM instance. If the message could not be 
             # sent, we interrupt the loop iteration and retry later
-            if send_sqs_message({'EventType': 'NewDICOM', 'Source': f"orthanc://{change['ID']}"}) is False:
+            _id = ''
+            if 'MainDicomTags' in change:
+              _id = change['MainDicomTags'].get('SOPInstanceUID', '')
+            if send_sqs_message({'EventType': 'NewDICOM', 'Source': f"orthanc://{change['ID']}", 'SOPInstanceUID': _id}) is False:
               break
           
           # Increment the last Orthanc change ID already processed
