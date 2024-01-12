@@ -272,7 +272,7 @@ def process_new_dicom_orthanc(src_instance_id, msg, study_instance_uid):
           location = f's3://{S3_BUCKET}/{S3_PREFIX}/{study_instance_uid}/{src_instance_id.replace("orthanc://", "")}'
           dst_instance_id = rpacs_util.s3_write_file(dst_dicom, location, env.region, 'bytes')
           # dst_instance_id = client.dst_orthanc.upload_instance(dst_dicom)
-          rpacs_util.write_file(dicom_file, location, env.region, 'bytes')
+          rpacs_util.write_file(dst_dicom, location, env.region, 'bytes')
           logger.info(f"Uploaded the de-identified DICOM file to Orthanc - ID={dst_instance_id}")
     except Exception as e:
       raise Exception(f'Failed the write the de-identified DICOM file - {e}')
