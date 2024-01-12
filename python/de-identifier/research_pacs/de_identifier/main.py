@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 env = None
 client = None
-S3_BUCKET = 'pacs-bucket-wvdeqzoc1jc3'
+S3_BUCKET = 'packunal-bucket-dsjsyzthrdxk'
 S3_PREFIX = 'dicom'
 
 
