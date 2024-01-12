@@ -82,9 +82,9 @@ class OrthancClient:
     return changes, new_last_seq
 
 
-  def get_study(self, study_instance_uid: str):
-    logger.debug(f'Getting study info with study_instance_uid = {study_instance_uid}')
-    response = self._request('GET', f'studies/{study_instance_uid}')
+  def get_study(self, instance_uid: str):
+    logger.debug(f'Getting study info with instance_uid = {instance_uid}')
+    response = self._request('GET', f'instances/{instance_uid}/study')
     response_json = response.json()
     return response_json
 

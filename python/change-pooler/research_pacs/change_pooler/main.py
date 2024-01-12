@@ -67,7 +67,7 @@ def main():
         for change in changes:
           logger.debug(f'New Orthanc change: {json.dumps(change)}')
           
-          if change['ChangeType'] == 'NewStudy':
+          if change['ChangeType'] == 'NewInstance':
             print('CHANGE : \n', change)
             logger.info(f"New DICOM study in Orthanc - ID={change['ID']}")
             
