@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 env = None
 client = None
+S3_BUCKET = 'pacs-bucket-wvdeqzoc1jc3'
+S3_PREFIX = 'dicom'
 
 
 def main():
@@ -104,10 +106,12 @@ def process_message(msg_str):
     msg_str (str): Content of the SQS message
   
   """
+  sop_instance_uid = ''
   try:
     msg = json.loads(msg_str)
     logger.debug(f"New message: {json.dumps(msg)}")
     event_type = msg['EventType']
+    sop_instance_uid = msg['SOPInstanceUID']
   except:
     logger.error(f'Skipping malformed message: {msg_str}')
     return
@@ -135,14 +139,14 @@ def process_message(msg_str):
   """
   if event_type == 'NewDICOM':
     try:
-      process_new_dicom(msg)
+      process_new_dicom(msg, sop_instance_uid)
     except Exception as e:
       if not ('Retry' in msg and msg['Retry'] == False):
         raise e
     
     
 
-def process_new_dicom(msg):
+def process_new_dicom(msg, sop_instance_uid):
   """
   Process incoming DICOM files as follows:
   
@@ -158,6 +162,7 @@ def process_new_dicom(msg):
   
   Args:
     msg (dict): Content of the SQS message
+    sop_instance_uid (str): SOPInstanceUID of the instance
   """
   try:
     dicom_source = msg['Source']
@@ -174,7 +179,7 @@ def process_new_dicom(msg):
     try:
       dicom_file = rpacs_util.load_file(dicom_source, env.region, 'bytes')
       instance_id = client.src_orthanc.upload_instance(dicom_file)
-      location = f's3://pacs-bucket-wvdeqzoc1jc3/dicom/{instance_id}'
+      location = f's3://{S3_BUCKET}/{S3_PREFIX}/{sop_instance_uid}/{instance_id}'
       rpacs_util.s3_write_file(dicom_file, location, env.region, 'bytes')
       client.db_msg.upsert(instance_id, msg)
       logger.info(f"Uploaded the local DICOM file to Orthanc - Instance ID={instance_id}")
@@ -207,12 +212,12 @@ def process_new_dicom(msg):
     # Otherwise, process the message and delete the original DICOM file in Orthanc unless 
     # we need to preserve them
     else:
-      process_new_dicom_orthanc(instance_id, msg)
+      process_new_dicom_orthanc(instance_id, msg, sop_instance_uid)
       if env.preserve_files.lower() == 'no':
         client.src_orthanc.delete_instance(instance_id)
 
       
-def process_new_dicom_orthanc(src_instance_id, msg):
+def process_new_dicom_orthanc(src_instance_id, msg, sop_instance_uid):
   """
   Process new DICOM instances stored in the source Orthanc server as follows:
   - Download the configuration file how original DICOM files are processed
@@ -223,7 +228,7 @@ def process_new_dicom_orthanc(src_instance_id, msg):
   Args:
     src_instance_id (str): Instance ID in the source Orthanc server
     msg (dict): Content of the SQS message
-    
+    sop_instance_uid (str): SOPInstanceUID of the instance
   """
   err = None
   logs = {'Message': msg}
@@ -260,11 +265,11 @@ def process_new_dicom_orthanc(src_instance_id, msg):
       if dst_dicom != None:
         if 'Destination' in msg:
           rpacs_util.write_file(dst_dicom, msg['Destination'], env.region, 'bytes')
-          location = f's3://pacs-bucket-wvdeqzoc1jc3/dicom/{src_instance_id.replace("orthanc://", "")}'
+          location = f's3://{S3_BUCKET}/{S3_PREFIX}/{sop_instance_uid}/{src_instance_id.replace("orthanc://", "")}'
           rpacs_util.s3_write_file(dst_dicom, location, env.region, 'bytes')
           logger.info(f"Uploaded the de-identified DICOM file to \"{msg['Destination']}\"")
         else:
-          location = f's3://pacs-bucket-wvdeqzoc1jc3/dicom/{src_instance_id.replace("orthanc://", "")}'
+          location = f's3://{S3_BUCKET}/{S3_PREFIX}/{sop_instance_uid}/{src_instance_id.replace("orthanc://", "")}'
           dst_instance_id = rpacs_util.s3_write_file(dst_dicom, location, env.region, 'bytes')
           # dst_instance_id = client.dst_orthanc.upload_instance(dst_dicom)
           rpacs_util.write_file(dicom_file, location, env.region, 'bytes')
@@ -300,7 +305,7 @@ def process_new_dicom_orthanc(src_instance_id, msg):
     raise err
 
 
-def deidentify_dicom_orthanc(instance_id, src_dicom, config, logs):
+def deidentify_dicom_orthanc(instance_id, src_dicom, config, logs, sop_instance_uid):
   """
   De-identify a DICOM instance from in the source Orthanc server as follows:
   - Retrieve the labels matching this Orthanc instance (`Labels` section of the configuration 
@@ -321,7 +326,7 @@ def deidentify_dicom_orthanc(instance_id, src_dicom, config, logs):
     src_dicom (bytes): Content of the DICOM file downloaded from Orthanc
     config (dict): Configuration file
     logs (dict): Dict where logs should be added
-  
+    sop_instance_uid (str): SOPInstanceUID of the instance
   """
   # Create a DicomDeidentifier object and load the DICOM file
   try:
@@ -396,7 +401,7 @@ def deidentify_dicom_orthanc(instance_id, src_dicom, config, logs):
       # Upload the de-identified DICOM file to Orthanc. This new DICOM file should be ignored by the 
       # de-identifier
       tmp_instance_id = client.src_orthanc.upload_instance(dst_dicom)
-      location = f's3://pacs-bucket-wvdeqzoc1jc3/dicom/{instance_id.replace("orthanc://", "")}'
+      location = f's3://{S3_BUCKET}/{S3_PREFIX}/{sop_instance_uid}/{instance_id.replace("orthanc://", "")}'
       tmp_instance_id = rpacs_util.s3_write_file(dst_dicom, location, env.region, 'bytes')
       client.db_msg.upsert(tmp_instance_id, {'Skip': True})
       
