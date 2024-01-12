@@ -257,7 +257,7 @@ def process_new_dicom_orthanc(src_instance_id, msg, study_instance_uid):
     
     # De-identify the DICOM file
     logger.debug('De-identifying the original DICOM file from Orthanc')
-    dst_dicom = deidentify_dicom_orthanc(src_instance_id, src_dicom, config, logs)
+    dst_dicom = deidentify_dicom_orthanc(src_instance_id, src_dicom, config, logs, study_instance_uid)
     
     # Send the de-identified DICOM file to the destination, if the call is `deidentify_dicom` 
     # returned a DICOM file (the file might be skipped based on its labels)
