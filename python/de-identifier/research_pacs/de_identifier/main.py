@@ -207,14 +207,14 @@ def process_new_dicom(msg, study_instance_uid):
     # instance, because it was uploaded by the de-identifier
     if 'Skip' in msg and msg['Skip'] == True:
       logger.info(f'Skipping the Orthanc instance (Skip=True)')
-      client.src_orthanc.delete_instance(instance_id)
+      # client.src_orthanc.delete_instance(instance_id)
       
     # Otherwise, process the message and delete the original DICOM file in Orthanc unless 
     # we need to preserve them
     else:
       process_new_dicom_orthanc(instance_id, msg, study_instance_uid)
-      if env.preserve_files.lower() == 'no':
-        client.src_orthanc.delete_instance(instance_id)
+      # if env.preserve_files.lower() == 'no':
+      #   client.src_orthanc.delete_instance(instance_id)
 
       
 def process_new_dicom_orthanc(src_instance_id, msg, study_instance_uid):
