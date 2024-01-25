@@ -79,6 +79,14 @@ def main():
               _id = study_details['MainDicomTags'].get('StudyInstanceUID', '')
             if send_sqs_message({'EventType': 'NewDICOM', 'Source': f"orthanc://{change['ID']}", 'StudyInstanceUID': _id}) is False:
               break
+          if change['ChangeType'] == 'NewStudy':
+            print('CHANGE : \n', change)
+            logger.info(f"New DICOM study in Orthanc - ID={change['ID']}")
+            
+            # Send a SQS message to notify of the new DICOM instance. If the message could not be 
+            # sent, we interrupt the loop iteration and retry later
+            if send_sqs_message({'EventType': 'NewSTUDY', 'Source': f"orthanc://{change['ID']}", 'StudyID': change['ID']}) is False:
+              break
           
           # Increment the last Orthanc change ID already processed
           new_last_seq = change['Seq']

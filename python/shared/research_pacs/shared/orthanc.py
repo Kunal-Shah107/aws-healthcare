@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT-0
 
 import logging
-
+from io import BytesIO
 import requests
 
 logger = logging.getLogger(__name__)
@@ -87,6 +87,13 @@ class OrthancClient:
     response = self._request('GET', f'instances/{instance_uid}/study')
     response_json = response.json()
     return response_json
+
+
+  def get_study_archive(self, study_id: str):
+    logger.debug(f'Getting study info with ID = {study_id}')
+    response = self._request('POST', f'studies/{study_id}/archive')
+    zip_content = BytesIO(response.content)
+    return zip_content
 
 
   def upload_instance(self, dicom_file):
