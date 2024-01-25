@@ -21,6 +21,7 @@ env = None
 client = None
 S3_BUCKET = 'packunal-bucket-dsjsyzthrdxk'
 S3_PREFIX = 'dicom'
+S3_PREFIX_STUDY = 'studies'
 
 
 def main():
@@ -140,6 +141,16 @@ def process_message(msg_str):
   if event_type == 'NewDICOM':
     try:
       process_new_dicom(msg, study_instance_uid)
+    except Exception as e:
+      if not ('Retry' in msg and msg['Retry'] == False):
+        raise e
+  if event_type == 'NewSTUDY':
+    try:
+      if 'Source' in msg:
+        study_id = msg['StudyID']
+        zip_content = get_study_archive(study_id)
+        location = f's3://{S3_BUCKET}/{S3_PREFIX_STUDY}/{study_id}/{study_id}.zip'
+        rpacs_util.s3_write_file(zip_content, location, env.region, content_type='zip')
     except Exception as e:
       if not ('Retry' in msg and msg['Retry'] == False):
         raise e
