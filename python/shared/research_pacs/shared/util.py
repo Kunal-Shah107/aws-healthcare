@@ -133,22 +133,13 @@ def s3_write_file(content, location, aws_region, content_type='str', s3_credenti
     raise Exception(msg_err)
 
 
-def s3_write_file(content, location, aws_region, content_type='zip', s3_credentials=None):
+def s3_write_file_zip(content, location, aws_region, s3_credentials=None):
   logger.debug(f'Write the file "{location}" as "{content_type}"')
   try:
-    instance_id = ''
-    if content_type == 'bytes':
-      content_bytes = content
-    elif content_type == 'str':
-      content_bytes.encode()
-    elif content_type == 'json':
-      content_bytes = json.dumps(content, indent=4, sort_keys=True).encode()
-    elif content_type == 'zip':
-      pass
-
     # Save to S3 if the location matches the S3 pattern
     if 's3://' in location:
       bucket, key = location.replace('s3://', '').split('/', maxsplit=1)
+      s3 = None
       if s3_credentials != None:
         s3 = boto3.client('s3', region_name=aws_region, **s3_credentials)
       else:

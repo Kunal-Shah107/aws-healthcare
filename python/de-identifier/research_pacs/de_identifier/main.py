@@ -146,9 +146,11 @@ def process_message(msg_str):
     try:
       if 'Source' in msg:
         study_id = msg.get('StudyID', '')
-        zip_content = get_study_archive(study_id)
+        zip_content = client.src_orthanc.get_study_archive(study_id)
+        print('ZIP CONTENT - ', zip_content)
         location = f's3://{S3_BUCKET}/{S3_PREFIX_STUDY}/{study_id}/{study_id}.zip'
-        rpacs_util.s3_write_file(zip_content, location, env.region, content_type='zip')
+        print('LOCATION - ', location)
+        rpacs_util.s3_write_file_zip(zip_content, location, env.region)
     except Exception as e:
       if not ('Retry' in msg and msg['Retry'] == False):
         raise e
