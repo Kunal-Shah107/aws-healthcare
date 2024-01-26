@@ -107,12 +107,10 @@ def process_message(msg_str):
     msg_str (str): Content of the SQS message
   
   """
-  study_instance_uid = ''
   try:
     msg = json.loads(msg_str)
     logger.debug(f"New message: {json.dumps(msg)}")
     event_type = msg['EventType']
-    study_instance_uid = msg['StudyInstanceUID']
   except:
     logger.error(f'Skipping malformed message: {msg_str}')
     return
@@ -136,10 +134,10 @@ def process_message(msg_str):
     "Skip":           [Optional] Skip this file is `True`. Default is `False`
     "Retry":          [Optional] Set to `False` to not retry if the message processing failed
   }
-  
   """
   if event_type == 'NewDICOM':
     try:
+      study_instance_uid = msg.get('StudyInstanceUID', '')
       process_new_dicom(msg, study_instance_uid)
     except Exception as e:
       if not ('Retry' in msg and msg['Retry'] == False):
@@ -147,7 +145,7 @@ def process_message(msg_str):
   if event_type == 'NewSTUDY':
     try:
       if 'Source' in msg:
-        study_id = msg['StudyID']
+        study_id = msg.get('StudyID', '')
         zip_content = get_study_archive(study_id)
         location = f's3://{S3_BUCKET}/{S3_PREFIX_STUDY}/{study_id}/{study_id}.zip'
         rpacs_util.s3_write_file(zip_content, location, env.region, content_type='zip')
