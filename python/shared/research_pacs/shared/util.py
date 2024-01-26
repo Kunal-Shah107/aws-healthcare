@@ -134,7 +134,7 @@ def s3_write_file(content, location, aws_region, content_type='str', s3_credenti
 
 
 def s3_write_file_zip(content, location, aws_region, s3_credentials=None):
-  logger.debug(f'Write the file "{location}" as "{content_type}"')
+  logger.debug(f'Write the file "{location}"')
   try:
     # Save to S3 if the location matches the S3 pattern
     if 's3://' in location:
@@ -147,7 +147,7 @@ def s3_write_file_zip(content, location, aws_region, s3_credentials=None):
       s3_response = s3.upload_fileobj(content, bucket, key)
     return s3_response
   except Exception as e:
-    msg_err = f'Failed to write the "{content_type}" input to {location} - {e}'
+    msg_err = f'Failed to write the file to {location} - {e}'
     logger.debug(msg_err)
     raise Exception(msg_err)
 
