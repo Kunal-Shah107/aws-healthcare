@@ -91,7 +91,7 @@ class OrthancClient:
 
   def get_study_archive(self, study_id: str):
     logger.debug(f'Getting study info with ID = {study_id}')
-    response = self._request('POST', f'studies/{study_id}/archive')
+    response = self._request('GET', f'studies/{study_id}/archive')
     zip_content = BytesIO(response.content)
     return zip_content
 
