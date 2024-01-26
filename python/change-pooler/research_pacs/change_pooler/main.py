@@ -64,10 +64,9 @@ def main():
         new_last_seq = 0
 
       else:
+        print('CHANGES LIST : ', changes)
         for change in changes:
           logger.debug(f'New Orthanc change: {json.dumps(change)}')
-          
-          print('CHANGE : \n', change)
           if change['ChangeType'] == 'NewInstance':
             logger.info(f"New DICOM Instance in Orthanc - ID={change['ID']}")
             
@@ -79,7 +78,7 @@ def main():
               _id = study_details['MainDicomTags'].get('StudyInstanceUID', '')
             if send_sqs_message({'EventType': 'NewDICOM', 'Source': f"orthanc://{change['ID']}", 'StudyInstanceUID': _id}) is False:
               break
-          if change['ChangeType'] == 'NewStudy':
+          if change['ChangeType'] in ('NewStudy', 'StableStudy'):
             logger.info(f"New DICOM Study in Orthanc - ID={change['ID']}")
             
             # Send a SQS message to notify of the new DICOM instance. If the message could not be 
